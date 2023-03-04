@@ -1,12 +1,19 @@
-use wgpu::SurfaceError;
+use wgpu::{SurfaceError, VertexBufferLayout};
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
 mod game_state;
+mod model;
+mod resources;
 mod state;
+mod texture;
 
 use state::State;
+
+pub trait Vertex {
+    fn desc<'a>() -> VertexBufferLayout<'a>;
+}
 
 pub async fn run() {
     let event_loop = EventLoop::new();
