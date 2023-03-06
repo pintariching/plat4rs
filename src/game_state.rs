@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use glam::Vec2;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -9,10 +11,12 @@ use winit::dpi::PhysicalSize;
 
 use crate::{
     camera::{Camera, CameraController, CameraUniform},
+    instance::Instance,
     model::{Mesh, Model, ModelVertex},
 };
 
 pub struct GameState {
+    pub time: Instant,
     pub camera: Camera,
     pub camera_controller: CameraController,
     pub camera_uniform: CameraUniform,
@@ -20,13 +24,17 @@ pub struct GameState {
     pub camera_bind_group: BindGroup,
     pub camera_bind_group_layout: BindGroupLayout,
     pub model: Model,
+    pub instance: Instance,
+    pub instance_buffer: Buffer,
 }
 
 impl GameState {
     pub fn new(device: &Device, window_size: &PhysicalSize<u32>) -> Self {
+        let time = Instant::now();
+
         let camera = Camera {
-            focus_position: Vec2::new(100., 0.),
-            zoom: 2.,
+            focus_position: Vec2::new(0., 0.),
+            zoom: 1.,
         };
 
         let camera_controller = CameraController { speed: 1. };
@@ -68,11 +76,11 @@ impl GameState {
                 color: [1., 0., 0.],
             },
             ModelVertex {
-                position: [100., 0., 0.],
+                position: [1., 0., 0.],
                 color: [0., 1., 0.],
             },
             ModelVertex {
-                position: [100., 100., 0.],
+                position: [1., 1., 0.],
                 color: [0., 0., 1.],
             },
         ];
@@ -100,7 +108,20 @@ impl GameState {
 
         let model = Model { meshes: vec![mesh] };
 
+        let instance = Instance {
+            position: Vec2::new(0., 0.),
+            rotation: 0.,
+            scale: 100.,
+        };
+
+        let instance_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Instance Buffer"),
+            contents: bytemuck::cast_slice(&[instance.to_raw()]),
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        });
+
         Self {
+            time,
             camera,
             camera_controller,
             camera_uniform,
@@ -108,6 +129,8 @@ impl GameState {
             camera_bind_group,
             camera_bind_group_layout,
             model,
+            instance,
+            instance_buffer,
         }
     }
 }

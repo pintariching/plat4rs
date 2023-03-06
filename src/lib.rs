@@ -6,6 +6,7 @@ use winit::window::WindowBuilder;
 
 mod camera;
 mod game_state;
+mod instance;
 mod model;
 mod resources;
 mod state;

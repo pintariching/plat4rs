@@ -1,3 +1,6 @@
+use std::f32::consts::PI;
+use std::time;
+
 use wgpu::{
     include_wgsl, Backends, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features,
     InstanceDescriptor, Limits, LoadOp, Operations, PowerPreference, Queue,
@@ -9,6 +12,7 @@ use winit::event::WindowEvent;
 use winit::window::Window;
 
 use crate::game_state::GameState;
+use crate::instance::InstanceRaw;
 use crate::model::{DrawModel, ModelVertex};
 use crate::Vertex;
 
@@ -111,7 +115,7 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[ModelVertex::desc()],
+                buffers: &[ModelVertex::desc(), InstanceRaw::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -174,7 +178,18 @@ impl State {
         }
     }
 
-    pub fn update(&mut self) {}
+    pub fn update(&mut self) {
+        self.game_state.instance.rotation =
+            (self.game_state.time.elapsed().as_secs_f32()).sin() * PI * 2.;
+
+        let instance_data = self.game_state.instance.to_raw();
+
+        self.queue.write_buffer(
+            &self.game_state.instance_buffer,
+            0,
+            bytemuck::cast_slice(&[instance_data]),
+        );
+    }
 
     pub fn render(&mut self) -> Result<(), SurfaceError> {
         let output = self.surface.get_current_texture()?;
@@ -208,8 +223,8 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
+            render_pass.set_vertex_buffer(1, self.game_state.instance_buffer.slice(..));
             render_pass.set_pipeline(&self.render_pipeline);
-
             render_pass.draw_model(&self.game_state.model, &self.game_state.camera_bind_group);
         }
 
