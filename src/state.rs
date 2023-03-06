@@ -8,6 +8,10 @@ use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+use crate::game_state::GameState;
+use crate::model::{DrawModel, ModelVertex};
+use crate::Vertex;
+
 pub struct State {
     pub surface: Surface,
     pub device: Device,
@@ -16,6 +20,7 @@ pub struct State {
     pub size: PhysicalSize<u32>,
     pub window: Window,
     pub render_pipeline: RenderPipeline,
+    pub game_state: GameState,
 }
 
 impl State {
@@ -89,12 +94,14 @@ impl State {
 
         surface.configure(&device, &config);
 
+        let game_state = GameState::new(&device, &size);
+
         let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&game_state.camera_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -104,7 +111,7 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[ModelVertex::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -144,6 +151,7 @@ impl State {
             size,
             window,
             render_pipeline,
+            game_state,
         }
     }
 
@@ -189,8 +197,8 @@ impl State {
                     resolve_target: None,
                     ops: Operations {
                         load: LoadOp::Clear(Color {
-                            r: 0.5,
-                            g: 0.5,
+                            r: 0.2,
+                            g: 0.2,
                             b: 0.0,
                             a: 1.0,
                         }),
@@ -201,7 +209,8 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..6, 0..2);
+
+            render_pass.draw_model(&self.game_state.model, &self.game_state.camera_bind_group);
         }
 
         // submit will accept anything that implements IntoIter

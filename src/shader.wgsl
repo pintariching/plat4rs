@@ -1,21 +1,31 @@
 // Vertex shader
 
+struct Camera {
+    view_proj: mat4x4<f32>,
+}
+
+@group(0) @binding(0)
+var<uniform> camera: Camera;
+
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) color: vec3<f32>,
+}
+
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-};
+    @location(0) color: vec3<f32>,
+}
 
 @vertex
 fn vs_main(
-    @builtin(vertex_index) in_vertex_index: u32,
+    vert: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    let angle = f32(60) * f32(in_vertex_index) * 3.14159;
-    let radius = 1.0;
 
-    let x = cos(angle) * radius;
-    let y = sin(angle) * radius;
+    out.color = vert.color;
+    out.clip_position = camera.view_proj * vec4<f32>(vert.position, 1.);
 
-    out.clip_position = vec4<f32>(x, y, 0.0, 1.0);
     return out;
 }
 
@@ -23,5 +33,5 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(0.3, 0.2, 0.1, 1.0);
+    return vec4<f32>(in.color, 1.);
 }

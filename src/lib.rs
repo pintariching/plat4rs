@@ -1,8 +1,10 @@
 use wgpu::{SurfaceError, VertexBufferLayout};
+use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
+mod camera;
 mod game_state;
 mod model;
 mod resources;
@@ -19,6 +21,7 @@ pub async fn run() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_title("Plat4rs")
+        .with_inner_size(PhysicalSize::new(800, 600))
         .build(&event_loop)
         .unwrap();
 
