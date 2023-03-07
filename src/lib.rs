@@ -63,6 +63,8 @@ pub async fn run() {
             }
         }
         Event::MainEventsCleared => {
+            state.game_state.update();
+
             // RedrawRequested will only trigger once, unless we manually
             // request it.
             state.window().request_redraw();

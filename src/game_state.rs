@@ -135,4 +135,6 @@ impl GameState {
             pressed_keys: HashSet::new(),
         }
     }
+
+    pub fn update(&mut self) {}
 }
