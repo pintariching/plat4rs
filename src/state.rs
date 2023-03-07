@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
-use std::time;
+use std::time::Instant;
 
+use glam::Vec2;
 use wgpu::{
     include_wgsl, Backends, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features,
     InstanceDescriptor, Limits, LoadOp, Operations, PowerPreference, Queue,
@@ -8,9 +9,10 @@ use wgpu::{
     Surface, SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor,
 };
 use winit::dpi::PhysicalSize;
-use winit::event::WindowEvent;
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::window::Window;
 
+use crate::camera::CameraUniform;
 use crate::game_state::GameState;
 use crate::instance::InstanceRaw;
 use crate::model::{DrawModel, ModelVertex};
@@ -174,13 +176,31 @@ impl State {
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state,
+                        virtual_keycode: Some(keycode),
+                        ..
+                    },
+                ..
+            } => {
+                let _ = match *state {
+                    ElementState::Pressed => self.game_state.pressed_keys.insert(keycode.clone()),
+                    ElementState::Released => self.game_state.pressed_keys.remove(keycode),
+                };
+
+                dbg!(&self.game_state.pressed_keys);
+
+                false
+            }
             _ => false,
         }
     }
 
     pub fn update(&mut self) {
         self.game_state.instance.rotation =
-            (self.game_state.time.elapsed().as_secs_f32()).sin() * PI * 2.;
+            (self.game_state.start_time.elapsed().as_secs_f32()).sin() * PI * 2.;
 
         let instance_data = self.game_state.instance.to_raw();
 
@@ -189,6 +209,16 @@ impl State {
             0,
             bytemuck::cast_slice(&[instance_data]),
         );
+
+        let camera_uniform =
+            CameraUniform::new(&self.game_state.camera, &self.window().inner_size());
+        self.queue.write_buffer(
+            &self.game_state.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[camera_uniform]),
+        );
+
+        self.game_state.last_update = Instant::now();
     }
 
     pub fn render(&mut self) -> Result<(), SurfaceError> {

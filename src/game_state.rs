@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{collections::HashSet, time::Instant};
 
 use glam::Vec2;
 use wgpu::{
@@ -7,18 +7,18 @@ use wgpu::{
     BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
     ShaderStages,
 };
-use winit::dpi::PhysicalSize;
+use winit::{dpi::PhysicalSize, event::VirtualKeyCode};
 
 use crate::{
-    camera::{Camera, CameraController, CameraUniform},
+    camera::{Camera, CameraUniform},
     instance::Instance,
     model::{Mesh, Model, ModelVertex},
 };
 
 pub struct GameState {
-    pub time: Instant,
+    pub start_time: Instant,
+    pub last_update: Instant,
     pub camera: Camera,
-    pub camera_controller: CameraController,
     pub camera_uniform: CameraUniform,
     pub camera_buffer: Buffer,
     pub camera_bind_group: BindGroup,
@@ -26,18 +26,19 @@ pub struct GameState {
     pub model: Model,
     pub instance: Instance,
     pub instance_buffer: Buffer,
+    pub pressed_keys: HashSet<VirtualKeyCode>,
 }
 
 impl GameState {
     pub fn new(device: &Device, window_size: &PhysicalSize<u32>) -> Self {
-        let time = Instant::now();
+        let start_time = Instant::now();
+        let last_update = Instant::now();
 
         let camera = Camera {
             focus_position: Vec2::new(0., 0.),
             zoom: 1.,
+            speed: 1000.,
         };
-
-        let camera_controller = CameraController { speed: 1. };
 
         let camera_uniform = CameraUniform::new(&camera, window_size);
         let camera_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -121,9 +122,9 @@ impl GameState {
         });
 
         Self {
-            time,
+            start_time,
+            last_update,
             camera,
-            camera_controller,
             camera_uniform,
             camera_buffer,
             camera_bind_group,
@@ -131,6 +132,7 @@ impl GameState {
             model,
             instance,
             instance_buffer,
+            pressed_keys: HashSet::new(),
         }
     }
 }

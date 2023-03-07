@@ -1,9 +1,14 @@
 use glam::{Mat4, Vec2, Vec3};
-use winit::dpi::PhysicalSize;
+use tracing::event;
+use winit::{
+    dpi::PhysicalSize,
+    event::{ElementState, KeyboardInput, WindowEvent},
+};
 
 pub struct Camera {
     pub focus_position: Vec2,
     pub zoom: f32,
+    pub speed: f32,
 }
 
 impl Camera {
@@ -18,10 +23,14 @@ impl Camera {
 
         orth * zoom
     }
-}
 
-pub struct CameraController {
-    pub speed: f32,
+    pub fn move_position(&mut self, delta: Vec2) {
+        self.focus_position = self.focus_position + delta;
+    }
+
+    pub fn process_events(event: &WindowEvent) -> bool {
+        todo!()
+    }
 }
 
 #[repr(C)]
