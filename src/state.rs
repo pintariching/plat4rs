@@ -2,10 +2,11 @@ use std::f32::consts::PI;
 use std::time::Instant;
 
 use glam::Vec2;
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{
-    include_wgsl, Backends, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features,
-    InstanceDescriptor, Limits, LoadOp, Operations, PowerPreference, Queue,
-    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RequestAdapterOptions,
+    include_wgsl, Backends, BufferUsages, Color, CommandEncoderDescriptor, Device,
+    DeviceDescriptor, Features, InstanceDescriptor, Limits, LoadOp, Operations, PowerPreference,
+    Queue, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RequestAdapterOptions,
     Surface, SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor,
 };
 use winit::dpi::PhysicalSize;
@@ -190,8 +191,6 @@ impl State {
                     ElementState::Released => self.game_state.pressed_keys.remove(keycode),
                 };
 
-                dbg!(&self.game_state.pressed_keys);
-
                 false
             }
             _ => false,
@@ -199,23 +198,18 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        self.game_state.instance.rotation =
-            (self.game_state.start_time.elapsed().as_secs_f32()).sin() * PI * 2.;
-
-        let instance_data = self.game_state.instance.to_raw();
-
-        self.queue.write_buffer(
-            &self.game_state.instance_buffer,
-            0,
-            bytemuck::cast_slice(&[instance_data]),
-        );
-
         let camera_uniform =
             CameraUniform::new(&self.game_state.camera, &self.window().inner_size());
         self.queue.write_buffer(
             &self.game_state.camera_buffer,
             0,
             bytemuck::cast_slice(&[camera_uniform]),
+        );
+
+        self.queue.write_buffer(
+            &self.game_state.instance_buffer,
+            0,
+            bytemuck::cast_slice(&[self.game_state.instance.to_raw()]),
         );
 
         self.game_state.last_update = Instant::now();

@@ -10,20 +10,22 @@ use wgpu::{
 use winit::{dpi::PhysicalSize, event::VirtualKeyCode};
 
 use crate::{
-    camera::{Camera, CameraUniform},
+    camera::{Camera, CameraController, CameraUniform},
     instance::Instance,
-    model::{Mesh, Model, ModelVertex},
+    model::{Mesh, Model, ModelController, ModelVertex},
 };
 
 pub struct GameState {
     pub start_time: Instant,
     pub last_update: Instant,
     pub camera: Camera,
+    pub camera_controller: CameraController,
     pub camera_uniform: CameraUniform,
     pub camera_buffer: Buffer,
     pub camera_bind_group: BindGroup,
     pub camera_bind_group_layout: BindGroupLayout,
     pub model: Model,
+    pub model_controller: ModelController,
     pub instance: Instance,
     pub instance_buffer: Buffer,
     pub pressed_keys: HashSet<VirtualKeyCode>,
@@ -37,8 +39,11 @@ impl GameState {
         let camera = Camera {
             focus_position: Vec2::new(0., 0.),
             zoom: 1.,
-            speed: 1000.,
+            window_size: window_size.clone(),
+            aspect_ratio: 3. / 4.,
         };
+
+        let camera_controller = CameraController::new(1.);
 
         let camera_uniform = CameraUniform::new(&camera, window_size);
         let camera_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -81,12 +86,16 @@ impl GameState {
                 color: [0., 1., 0.],
             },
             ModelVertex {
-                position: [1., 1., 0.],
+                position: [1., -1., 0.],
                 color: [0., 0., 1.],
+            },
+            ModelVertex {
+                position: [0., -1., 0.],
+                color: [0., 1., 0.],
             },
         ];
 
-        let indices = &[0, 2, 1];
+        let indices = &[0, 1, 2, 2, 3, 0];
 
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -104,10 +113,12 @@ impl GameState {
             name: "Mesh".into(),
             vertex_buffer,
             index_buffer,
-            num_indices: 3,
+            num_indices: 6,
         };
 
         let model = Model { meshes: vec![mesh] };
+
+        let model_controller = ModelController::new(1.);
 
         let instance = Instance {
             position: Vec2::new(0., 0.),
@@ -125,16 +136,24 @@ impl GameState {
             start_time,
             last_update,
             camera,
+            camera_controller,
             camera_uniform,
             camera_buffer,
             camera_bind_group,
             camera_bind_group_layout,
             model,
+            model_controller,
             instance,
             instance_buffer,
             pressed_keys: HashSet::new(),
         }
     }
 
-    pub fn update(&mut self) {}
+    pub fn update(&mut self) {
+        // self.camera_controller.set_direction(&self.pressed_keys);
+        // self.camera_controller.update_camera(&mut self.camera);
+
+        self.model_controller.set_direction(&self.pressed_keys);
+        self.model_controller.update_instance(&mut self.instance);
+    }
 }

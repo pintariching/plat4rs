@@ -1,35 +1,24 @@
 use glam::{Mat4, Vec2, Vec3};
-use tracing::event;
-use winit::{
-    dpi::PhysicalSize,
-    event::{ElementState, KeyboardInput, WindowEvent},
-};
+use winit::dpi::PhysicalSize;
 
 pub struct Camera {
     pub focus_position: Vec2,
     pub zoom: f32,
-    pub speed: f32,
+    pub window_size: PhysicalSize<u32>,
+    pub aspect_ratio: f32,
 }
 
 impl Camera {
-    pub fn build_view_projection_matrix(&self, window_size: &PhysicalSize<u32>) -> Mat4 {
-        let left = self.focus_position.x - window_size.width as f32 / 2.;
-        let right = self.focus_position.x + window_size.width as f32 / 2.;
-        let top = self.focus_position.y - window_size.height as f32 / 2.;
-        let bottom = self.focus_position.y + window_size.height as f32 / 2.;
+    pub fn build_view_projection_matrix(&self) -> Mat4 {
+        let left = self.focus_position.x - self.window_size.width as f32 / 2.;
+        let right = self.focus_position.x + self.window_size.width as f32 / 2.;
+        let top = self.focus_position.y - self.window_size.height as f32 / 2.;
+        let bottom = self.focus_position.y + self.window_size.height as f32 / 2.;
 
         let orth = Mat4::orthographic_rh(left, right, bottom, top, 0., 1.);
         let zoom = Mat4::from_scale(Vec3::splat(self.zoom));
 
         orth * zoom
-    }
-
-    pub fn move_position(&mut self, delta: Vec2) {
-        self.focus_position = self.focus_position + delta;
-    }
-
-    pub fn process_events(event: &WindowEvent) -> bool {
-        todo!()
     }
 }
 
@@ -42,7 +31,21 @@ pub struct CameraUniform {
 impl CameraUniform {
     pub fn new(camera: &Camera, window_size: &PhysicalSize<u32>) -> Self {
         Self {
-            view_proj: camera.build_view_projection_matrix(window_size),
+            view_proj: camera.build_view_projection_matrix(),
+        }
+    }
+}
+
+pub struct CameraController {
+    speed: f32,
+    direction: Vec2,
+}
+
+impl CameraController {
+    pub fn new(speed: f32) -> Self {
+        Self {
+            speed,
+            direction: Vec2::ZERO,
         }
     }
 }

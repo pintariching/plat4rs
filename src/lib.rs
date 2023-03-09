@@ -1,3 +1,4 @@
+use glam::Vec2;
 use wgpu::{SurfaceError, VertexBufferLayout};
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
@@ -16,6 +17,34 @@ use state::State;
 
 pub trait Vertex {
     fn desc<'a>() -> VertexBufferLayout<'a>;
+}
+
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl Direction {
+    pub fn from_virtual_keycode(keycode: &VirtualKeyCode) -> Option<Self> {
+        match keycode {
+            VirtualKeyCode::W | VirtualKeyCode::Up => Some(Self::Up),
+            VirtualKeyCode::S | VirtualKeyCode::Down => Some(Self::Down),
+            VirtualKeyCode::A | VirtualKeyCode::Left => Some(Self::Left),
+            VirtualKeyCode::D | VirtualKeyCode::Right => Some(Self::Right),
+            _ => None,
+        }
+    }
+
+    pub fn to_vec2(&self) -> Vec2 {
+        match self {
+            Direction::Up => Vec2::Y,
+            Direction::Down => Vec2::NEG_Y,
+            Direction::Left => Vec2::X,
+            Direction::Right => Vec2::NEG_X,
+        }
+    }
 }
 
 pub async fn run() {

@@ -1,12 +1,14 @@
-use std::ops::Range;
+use std::{collections::HashSet, ops::Range};
 
 use bytemuck::{Pod, Zeroable};
+use glam::Vec2;
 use wgpu::{
     BindGroup, Buffer, BufferAddress, IndexFormat, RenderPass, VertexAttribute, VertexBufferLayout,
     VertexFormat, VertexStepMode,
 };
+use winit::event::VirtualKeyCode;
 
-use crate::Vertex;
+use crate::{instance::Instance, Direction, Vertex};
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -62,6 +64,34 @@ pub struct Mesh {
 pub struct Model {
     pub meshes: Vec<Mesh>,
     // pub materials: Vec<Material>,
+}
+
+pub struct ModelController {
+    pub speed: f32,
+    pub direction: Vec2,
+}
+
+impl ModelController {
+    pub fn new(speed: f32) -> Self {
+        Self {
+            speed,
+            direction: Vec2::ZERO,
+        }
+    }
+
+    pub fn set_direction(&mut self, pressed_keys: &HashSet<VirtualKeyCode>) {
+        let directions: Vec2 = pressed_keys
+            .iter()
+            .filter_map(|key| Direction::from_virtual_keycode(key))
+            .map(|dir| dir.to_vec2())
+            .sum();
+
+        self.direction = directions.normalize_or_zero() * -1.;
+    }
+
+    pub fn update_instance(&self, instance: &mut Instance) {
+        instance.position += self.direction * self.speed;
+    }
 }
 
 pub trait DrawModel<'a> {
